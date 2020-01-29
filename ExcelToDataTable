@@ -1,0 +1,46 @@
+public DataTable ExcelToDataTable(string path)
+        {
+            string fileExtension = Path.GetExtension(path);
+            FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read);
+            IExcelDataReader excelReader = null;
+            if (fileExtension == ".xls")
+                excelReader = ExcelReaderFactory.CreateBinaryReader(stream);
+            else
+                excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
+
+            var result = excelReader.AsDataSet(new ExcelDataSetConfiguration()
+            {
+                ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
+                {
+                    UseHeaderRow = true
+                }
+            });
+
+            DataTable dTable = result.Tables[0];
+            excelReader.Close();
+            return dTable;
+        }
+        public DataTable ExcelToDataTable(IFormFile file)
+        {
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            string fileExtension = Path.GetExtension(file.FileName);
+            byte[] data;
+            using (var br = new BinaryReader(file.OpenReadStream()))
+                data = br.ReadBytes((int)file.OpenReadStream().Length);
+            MemoryStream stream = new MemoryStream(data);
+            IExcelDataReader excelReader = null;
+            if (fileExtension == ".xls")
+                excelReader = ExcelReaderFactory.CreateBinaryReader(stream);
+            else
+                excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
+            var result = excelReader.AsDataSet(new ExcelDataSetConfiguration()
+            {
+                ConfigureDataTable = (_) => new ExcelDataTableConfiguration()
+                {
+                    UseHeaderRow = true
+                }
+            });
+            DataTable dTable = result.Tables[0];
+            excelReader.Close();
+            return dTable;
+        }
