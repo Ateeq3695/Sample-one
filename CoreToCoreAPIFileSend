@@ -1,0 +1,41 @@
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new System.Uri(_setting.ApiBaseUrl);
+                    //client.Timeout = new TimeSpan(0, 0, 0, 0, -1)
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _session.JwtToken);
+
+                    byte[] data;
+                    using (var br = new BinaryReader(model.ExcelFile.OpenReadStream()))
+                        data = br.ReadBytes((int)model.ExcelFile.OpenReadStream().Length);
+                    ByteArrayContent bytes = new ByteArrayContent(data);
+                    MultipartFormDataContent multiContent = new MultipartFormDataContent();
+                    multiContent.Add(bytes, "file", model.ExcelFile.FileName);
+                    multiContent.Add(new ObjectContent(model.GetType(), model, new JsonMediaTypeFormatter()), "model");
+                    var postTask = client.PostAsync("InsuranceCompany/UploadMembers", multiContent);
+                    postTask.Wait();
+                    var result = postTask.Result;
+                    if (result.IsSuccessStatusCode)
+                    {
+                        var readTask = result.Content.ReadAsAsync<ResponseModel>();
+                        readTask.Wait();
+                        response = readTask.Result;
+                    }
+                    else
+                    {
+                        response.Success = false;
+                        response.Message = "Error";
+                        response.Value = null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message = "Error : " + ex.Message;
+                response.Value = null;
+                _helper.LogError(ex);
+            }
